@@ -14,7 +14,7 @@ class ShowForm(Form):
         'start_time',
         validators=[DataRequired()],
         default= datetime.today()
-    )
+    ) 
 
 class VenueForm(Form):
     name = StringField(
