@@ -16,6 +16,7 @@ from forms import *
 from flask_migrate import Migrate
 import enum
 from datetime import datetime
+from pprint import pprint
 #----------------------------------------------------------------------------#
 # App Config.
 #----------------------------------------------------------------------------#
@@ -124,46 +125,35 @@ def venues():
   today = datetime.now()
   venues = Venue.query.group_by(Venue.id, Venue.state, Venue.city).all()
   state_city = ''
-  data = []
+  all_venues = []
 
   for venue in venues:
     print("Venue", venue)
     upcoming_shows = venue.shows.filter(Show.start_time > today).all()
-    if state_city == venue.city + venue.state:
-      data[len(data) -1]['venues'].append({
-        'id':venue.id,
-        'name':venue.name,
-        'num_upcoming_shows':len(upcoming_shows)
-      })
-    
-    else:
-      state_city = venue.city + venue.state
-      data.append({
-        'city':venue.city,
-        'state':venue.state,
+    current_city_and_state = venue.city + venue.state
+
+    if current_city_and_state != state_city:
+      state_city = current_city_and_state
+      all_venues.append({
+        'city': venue.city,
+        'state': venue.state,
         'venues': [{
           'id':venue.id,
-          'name':venue.name,
+          'name': venue.name,
           'num_upcoming_shows': len(upcoming_shows)
         }]
       })
+    else:
+      all_venues[len(all_venues) -1]['venues'].append({
+        'name':venue.name,
+        'id':venue.id,
+        'num_upcoming_shows': len(upcoming_shows)
+      })
 
-      print(data)
-
-  # query = Show.query.join(Venue).with_entities(Venue.city, Venue.state, Venue.name, Venue.id, func.count(Venue.id)).group_by(Venue.city, Venue.state, Venue.name, Venue.id)
-  # print(query)
-
-  # results = {}
-  # for city, state, name, id, count_1 in query:
-  #   location = (city, state)
-  #   if location not in results:
-  #     results[location]= []
-
-  #   results[location].append(({"id":id, "name":name, "num_upcoming_shows":count_1}))
-  #   #print(results.keys)
+  
 
  
-  return render_template('pages/venues.html', areas=data)
+  return render_template('pages/venues.html', areas=all_venues)
 
 @app.route('/venues/search', methods=['POST'])
 def search_venues():
@@ -217,22 +207,15 @@ def show_venue(venue_id):
       else:
         past_shows.append(show_info)
 
-    venue = {
-      "id":venue_query.id,
-      'name':venue_query.name,
-      'genres':venue_query.genres.split(','),
-      'address':venue_query.address,
-      'city':venue_query.city,
-      'state':venue_query.state,
-      'phone': venue_query.phone,
-      'website': venue_query.website_link,
-      'facebook_link': venue_query.facebook_link,
-      'seeking_talent': venue_query.seeking_talent,
-      'seeking_description':venue_query.seeking_description,
-      'image_link': venue_query.image_link,
-      'past_shows': past_shows,
-      'upcoming_shows':upcoming_shows,
-    }
+    # pprint(dir(venue_query))
+    # print(venue_query.__dict__)
+
+    # Get the venue data into a dictionary and make modifications
+    venue = venue_query.__dict__
+    venue['genres'] = json.loads(venue_query.genres)
+    venue['past_shows'] = past_shows
+    venue['upcoming_shows'] = upcoming_shows
+    
       
   return render_template('pages/show_venue.html', venue=venue)
 
@@ -387,22 +370,12 @@ def show_artist(artist_id):
       else:
         past_shows.append(show_info)
     
-    # Create the artist object
-    artist = {
-      'id': artist_query.id,
-      'name': artist_query.name,
-      'genres': artist_query.genres.split(','),
-      'city': artist_query.city,
-      'state': artist_query.state,
-      'phone': artist_query.phone,
-      'website': artist_query.website_link,
-      'facebook_link': artist_query.facebook_link,
-      'seeking_venue': artist_query.seeking_venue,
-      'seeking_description': artist_query.seeking_description,
-      'image_link':artist_query.image_link,
-      'past_shows': past_shows,
-      'upcoming_shows': upcoming_shows
-    }
+    #Artist object to display on front end
+    artist = artist_query.__dict__
+
+    artist['genres'] = artist_query.genres.split(',')
+    artist['past_shows'] = past_shows
+    artist['upcoming_shows'] = upcoming_shows
 
   return render_template('pages/show_artist.html', artist=artist)
 
