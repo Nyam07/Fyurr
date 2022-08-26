@@ -186,29 +186,23 @@ def show_venue(venue_id):
 
   today = datetime.now()
   venue_query = Venue.query.get(venue_id)
+  pprint(dir(venue_query))
 
   if venue_query:
-    past_shows = []
-    upcoming_shows = []
     
-    shows = venue_query.shows
-    # Get the show details
-    for show in shows:
-      show_info = {
-        'artist_id':show.artist_id,
-        'artist_name':show.Artist.name,
-        'artist_image_link':show.Artist.image_link,
-        'start_time':str(show.start_time)
-      }
-      
-      # Compare today's date with the start time
-      if show.start_time > today:
-        upcoming_shows.append(show_info)
-      else:
-        past_shows.append(show_info)
+    past_shows = venue_query.shows.filter(Show.start_time < today).all()
+    upcoming_shows = venue_query.shows.filter(Show.start_time > today).all()
+
 
     # pprint(dir(venue_query))
     # print(venue_query.__dict__)
+
+    # Convert the show start_times to string format
+    for show in past_shows:
+      show.start_time = str(show.start_time)
+    
+    for show in upcoming_shows:
+      show.start_time = str(show.start_time)
 
     # Get the venue data into a dictionary and make modifications
     venue = venue_query.__dict__
@@ -350,26 +344,19 @@ def show_artist(artist_id):
   artist_query = Artist.query.get(artist_id)
 
   if artist_query:
-    past_shows = []
-    upcoming_shows = []
 
     #query show details for the artist
-    shows = artist_query.shows
     
-    for show in shows:
-      show_info = {
-        'venue_id': show.venue_id,
-        'venue_name': show.Venue.name,
-        'venue_image_link': show.Venue.image_link,
-        'start_time':str(show.start_time)
-      }
+    past_shows = artist_query.shows.filter(Show.start_time < today).all()
+    upcoming_shows = artist_query.shows.filter(Show.start_time > today).all()
+    
+    # Convert the show start_times to string format
+    for show in past_shows:
+      show.start_time = str(show.start_time)
+    
+    for show in upcoming_shows:
+      show.start_time = str(show.start_time)
 
-      #add the show into the appropriate list
-      if show.start_time > today:
-        upcoming_shows.append(show_info)
-      else:
-        past_shows.append(show_info)
-    
     #Artist object to display on front end
     artist = artist_query.__dict__
 
